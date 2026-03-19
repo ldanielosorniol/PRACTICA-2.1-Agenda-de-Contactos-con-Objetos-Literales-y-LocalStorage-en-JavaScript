@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Agenda Daniel Osornio</title>
+</head>
+<body>
+
+    <h2>Agenda de Contactos</h2>
+    
+    <label for="nombre">Nombre:</label>
+    <input type="text" id="nombre"> <br>
+    <label for="direccion">Dirección:</label>
+    <input type="text" id="direccion"> <br>
+    <label for="telefono">Teléfono:</label>
+    <input type="text" id="telefono"> <br>
+    <label for="correo">Correo:</label>
+    <input type="email" id="correo"> <br>
+    <label for="urlFotografia">URL Foto:</label>
+    <input type="text" id="urlFotografia"> <br>
+    
+    <button onclick="agregarDatos()">Guardar Contacto</button> 
+    
+    <hr>
+    
+    <label><b>Selecciona criterio de búsqueda:</b></label> <br>
+    <button onclick="cambiarCriterio('nombre')">Buscar por Nombre</button>
+    <button onclick="cambiarCriterio('telefono')">Buscar por Teléfono</button>
+    <button onclick="cambiarCriterio('correo')">Buscar por Correo</button>
+    <button onclick="cambiarCriterio('direccion')">Buscar por Dirección</button>
+    
+    <br><br>
+    <label id="etiquetaBusqueda">Buscando por: Nombre</label> <br>
+    <input type="text" id="filtarInput" oninput="filtrarContactos()" placeholder="Escribe aquí...">
+
+    <div id="listado"></div>
+
+    <dialog id="miModal">
+        <h3>Editar Contacto</h3>
+        Nombre: <input type="text" id="enombre"><br>
+        Dirección: <input type="text" id="edireccion"><br>
+        Teléfono: <input type="text" id="etelefono"><br>
+        Correo: <input type="email" id="ecorreo"><br>
+        Foto URL: <input type="text" id="eurlFotografia"><br><br>
+        
+        <button onclick="guardarEditar()">Guardar Cambios</button>
+        <button onclick="cerrarModal()">Cancelar</button>
+    </dialog>
+
+    <script>
+        let agenda = [];
+        let indice = -1;
+        let criterioActual = "nombre"; 
+
+        // Función para cargar datos desde localStorage
+        function cargarDatos() {
+            let datos = localStorage.getItem("agenda");
+            if (datos) {
+                agenda = JSON.parse(datos);
+                visualizarAgenda();
+            }
+        }
+
+        // Función para guardar datos en localStorage
+        function guardarDatos() {
+            agenda.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            localStorage.setItem("agenda", JSON.stringify(agenda));
+        }
+
+        // Función para agregar un nuevo contacto
+        function agregarDatos() {
+            let nombre = document.getElementById("nombre").value;
+            let direccion = document.getElementById("direccion").value;
+            let telefono = document.getElementById("telefono").value;
+            let correo = document.getElementById("correo").value;
+            let urlFotografia = document.getElementById("urlFotografia").value;
+
+            if (nombre !== "") {
+                let contacto = {
+                    nombre: nombre,
+                    direccion: direccion,
+                    telefono: telefono,
+                    correo: correo,
+                    urlFotografia: urlFotografia
+                };
+
+                agenda.push(contacto);
+                guardarDatos();
+                visualizarAgenda();
+                limpiarFormulario();
+            }
+        }
+
+        // Función para visualizar la agenda 
+        function visualizarAgenda(agendaMostrar = agenda) {
+            let listado = document.getElementById("listado");
+            let html = "<ul>";
+
+            for (let i = 0; i < agendaMostrar.length; i++) {
+                html += "<li>" +
+                        "<img src='" + agendaMostrar[i].urlFotografia + "' width='50'> " +
+                        "<b>" + agendaMostrar[i].nombre + "</b> - " + agendaMostrar[i].telefono + " " +
+                        "<button onclick='editarContacto(" + i + ")'>Editar</button> " +
+                        "<button onclick='eliminarContacto(" + i + ")'>Eliminar</button>" +
+                        "</li>";
+            }
+
+            html += "</ul>";
+            listado.innerHTML = html;
+        }
+
+        // Función para cambiar el criterio de búsqueda
+        function cambiarCriterio(nuevoCriterio) {
+            criterioActual = nuevoCriterio;
+            document.getElementById("etiquetaBusqueda").innerText = "Buscando por: " + nuevoCriterio.charAt(0).toUpperCase() + nuevoCriterio.slice(1);
+            document.getElementById("filtarInput").value = "";
+            visualizarAgenda();
+        }
+
+        // Función para filtrar contactos según el criterio seleccionado
+        function filtrarContactos() {
+            let filtro = document.getElementById("filtarInput").value.toLowerCase();
+            let contactosFiltrados = agenda.filter(contacto => 
+                contacto[criterioActual].toLowerCase().includes(filtro)
+            );
+            visualizarAgenda(contactosFiltrados);
+        }
+
+        // Función para editar un contacto
+        function editarContacto(index) {
+            const modal = document.getElementById('miModal');
+            let contacto = agenda[index];
+            
+            document.getElementById("enombre").value = contacto.nombre;
+            document.getElementById("edireccion").value = contacto.direccion;
+            document.getElementById("etelefono").value = contacto.telefono;
+            document.getElementById("ecorreo").value = contacto.correo;
+            document.getElementById("eurlFotografia").value = contacto.urlFotografia;
+            
+            indice = index;
+            modal.showModal();
+        }
+        
+        // Función para guardar los cambios después de editar un contacto
+        function guardarEditar() {
+            agenda[indice].nombre = document.getElementById("enombre").value;
+            agenda[indice].direccion = document.getElementById("edireccion").value;
+            agenda[indice].telefono = document.getElementById("etelefono").value;
+            agenda[indice].correo = document.getElementById("ecorreo").value;
+            agenda[indice].urlFotografia = document.getElementById("eurlFotografia").value;
+            
+            guardarDatos();
+            visualizarAgenda();
+            cerrarModal();
+        }
+
+        // Función para eliminar un contacto
+        function eliminarContacto(index) {
+            agenda.splice(index, 1);
+            guardarDatos();
+            visualizarAgenda();
+        }
+
+        // Función para cerrar el modal de edición
+        function cerrarModal() {
+            document.getElementById('miModal').close();
+        }
+
+        // Función para limpiar el formulario después de agregar un contacto
+        function limpiarFormulario() {
+            document.getElementById("nombre").value = "";
+            document.getElementById("direccion").value = "";
+            document.getElementById("telefono").value = "";
+            document.getElementById("correo").value = "";
+            document.getElementById("urlFotografia").value = "";
+        }
+
+        cargarDatos();
+    </script>
+</body>
+</html>
